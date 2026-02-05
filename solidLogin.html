@@ -1,19 +1,98 @@
-import React from "react";
-import { View } from "react-native";
-import { WebView } from "react-native-webview";
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Solid Phone Test</title>
+</head>
 
-export default function WebLogin() {
+<body>
 
-  const onMessage = (event) => {
-    console.log("Message from web:", event.nativeEvent.data);
-  };
+<h2>Solid Mobile Test</h2>
 
-  return (
-    <View style={{ flex: 1 }}>
-      <WebView
-        source={{ uri: "https://phrytes.github.io/solid-login/solidLogin.html" }}
-        onMessage={onMessage}
-      />
-    </View>
-  );
+<button onclick="login()">Login</button>
+<button onclick="readFile()">Read File</button>
+<button onclick="writeFile()">Write File</button>
+
+<pre id="output"></pre>
+
+<script type="module">
+
+import {
+  login,
+  handleIncomingRedirect,
+  getDefaultSession
+} from "https://cdn.skypack.dev/@inrupt/solid-client-authn-browser";
+
+import {
+  getFile,
+  overwriteFile
+} from "https://cdn.skypack.dev/@inrupt/solid-client";
+
+const CLIENT_NAME = "Expo Phone Test";
+
+// ⚠️ Replace this later
+const FILE_URL = "YOUR_TEST_FILE_URL";
+
+const session = getDefaultSession();
+
+function log(msg) {
+  document.getElementById("output").textContent += msg + "\n";
+
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(msg);
+  }
 }
+
+window.login = async function () {
+  await login({
+    oidcIssuer: "https://login.inrupt.com",
+    redirectUrl: window.location.href,
+    clientName: CLIENT_NAME
+  });
+};
+
+window.readFile = async function () {
+
+  if (!session.info.isLoggedIn) {
+    log("Not logged in");
+    return;
+  }
+
+  const file = await getFile(FILE_URL, {
+    fetch: session.fetch
+  });
+
+  const text = await file.text();
+  log("File content: " + text);
+};
+
+window.writeFile = async function () {
+
+  if (!session.info.isLoggedIn) {
+    log("Not logged in");
+    return;
+  }
+
+  const blob = new Blob(
+    ["Hello from Expo phone " + new Date().toISOString()],
+    { type: "text/plain" }
+  );
+
+  await overwriteFile(FILE_URL, blob, {
+    fetch: session.fetch
+  });
+
+  log("File written!");
+};
+
+// Handle login redirect automatically
+await handleIncomingRedirect();
+
+if (session.info.isLoggedIn) {
+  log("Logged in as: " + session.info.webId);
+}
+
+</script>
+
+</body>
+</html>
