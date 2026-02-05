@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module">
+    import {
+      login,
+      handleIncomingRedirect,
+      getDefaultSession
+    } from "https://cdn.skypack.dev/@inrupt/solid-client-authn-browser";
+
+    async function start() {
+      await handleIncomingRedirect();
+
+      const session = getDefaultSession();
+
+      if (!session.info.isLoggedIn) {
+        await login({
+          oidcIssuer: "https://login.inrupt.com",
+          redirectUrl: window.location.href,
+          clientName: "Expo WebView App"
+        });
+      } else {
+        // send WebID back to React Native
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: "LOGIN_SUCCESS",
+            webId: session.info.webId
+          })
+        );
+      }
+    }
+
+    start();
+  </script>
+</head>
+<body>
+  Logging into Solid...
+</body>
+</html>
