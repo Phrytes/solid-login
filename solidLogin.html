@@ -1,80 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <script type="module">
-    import {
-      login,
-      handleIncomingRedirect,
-      getDefaultSession
-    } from "https://cdn.skypack.dev/@inrupt/solid-client-authn-browser";
+import React from "react";
+import { View } from "react-native";
+import { WebView } from "react-native-webview";
 
-    const session = getDefaultSession();
+export default function WebLogin() {
 
-    async function ensureLogin() {
-      await handleIncomingRedirect();
+  const onMessage = (event) => {
+    console.log("Message from web:", event.nativeEvent.data);
+  };
 
-      if (!session.info.isLoggedIn) {
-        await login({
-          oidcIssuer: "https://login.inrupt.com",
-          redirectUrl: window.location.href,
-          clientName: "Expo Solid Bridge"
-        });
-      } else {
-        sendMessage({
-          type: "LOGIN_SUCCESS",
-          webId: session.info.webId
-        });
-      }
-    }
-
-    async function writeFile(url, content) {
-      const res = await session.fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "text/plain" },
-        body: content
-      });
-
-      sendMessage({
-        type: "WRITE_RESULT",
-        status: res.status
-      });
-    }
-
-    async function readFile(url) {
-      const res = await session.fetch(url);
-      const text = await res.text();
-
-      sendMessage({
-        type: "READ_RESULT",
-        content: text
-      });
-    }
-
-    function sendMessage(obj) {
-      window.ReactNativeWebView?.postMessage(JSON.stringify(obj));
-    }
-
-    // Listen to React Native commands
-    window.addEventListener("message", async (event) => {
-      const msg = JSON.parse(event.data);
-
-      if (msg.action === "LOGIN") {
-        ensureLogin();
-      }
-
-      if (msg.action === "WRITE") {
-        writeFile(msg.url, msg.content);
-      }
-
-      if (msg.action === "READ") {
-        readFile(msg.url);
-      }
-    });
-
-  </script>
-</head>
-
-<body>
-Solid helper running...
-</body>
-</html>
+  return (
+    <View style={{ flex: 1 }}>
+      <WebView
+        source={{ uri: "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO" }}
+        onMessage={onMessage}
+      />
+    </View>
+  );
+}
