@@ -1,98 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Solid Phone Test</title>
+  <script type="module">
+    import {
+      login,
+      handleIncomingRedirect,
+      getDefaultSession
+    } from "https://cdn.skypack.dev/@inrupt/solid-client-authn-browser";
+
+    async function start() {
+      await handleIncomingRedirect();
+
+      const session = getDefaultSession();
+
+      if (!session.info.isLoggedIn) {
+        await login({
+          oidcIssuer: "https://login.inrupt.com",
+          redirectUrl: window.location.href,
+          clientName: "Expo WebView App"
+        });
+      } else {
+        // send WebID back to React Native
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: "LOGIN_SUCCESS",
+            webId: session.info.webId
+          })
+        );
+      }
+    }
+
+    start();
+  </script>
 </head>
-
 <body>
-
-<h2>Solid Mobile Test</h2>
-
-<button onclick="login()">Login</button>
-<button onclick="readFile()">Read File</button>
-<button onclick="writeFile()">Write File</button>
-
-<pre id="output"></pre>
-
-<script type="module">
-
-import {
-  login,
-  handleIncomingRedirect,
-  getDefaultSession
-} from "https://cdn.skypack.dev/@inrupt/solid-client-authn-browser";
-
-import {
-  getFile,
-  overwriteFile
-} from "https://cdn.skypack.dev/@inrupt/solid-client";
-
-const CLIENT_NAME = "Expo Phone Test";
-
-// ⚠️ Replace this later
-const FILE_URL = "https://353c6955-59b8-4909-bd1c-039eb4986045/public/test.txt";
-
-const session = getDefaultSession();
-
-function log(msg) {
-  document.getElementById("output").textContent += msg + "\n";
-
-  if (window.ReactNativeWebView) {
-    window.ReactNativeWebView.postMessage(msg);
-  }
-}
-
-window.login = async function () {
-  await login({
-    oidcIssuer: "https://login.inrupt.com",
-    redirectUrl: window.location.href,
-    clientName: CLIENT_NAME
-  });
-};
-
-window.readFile = async function () {
-
-  if (!session.info.isLoggedIn) {
-    log("Not logged in");
-    return;
-  }
-
-  const file = await getFile(FILE_URL, {
-    fetch: session.fetch
-  });
-
-  const text = await file.text();
-  log("File content: " + text);
-};
-
-window.writeFile = async function () {
-
-  if (!session.info.isLoggedIn) {
-    log("Not logged in");
-    return;
-  }
-
-  const blob = new Blob(
-    ["Hello from Expo phone " + new Date().toISOString()],
-    { type: "text/plain" }
-  );
-
-  await overwriteFile(FILE_URL, blob, {
-    fetch: session.fetch
-  });
-
-  log("File written!");
-};
-
-// Handle login redirect automatically
-await handleIncomingRedirect();
-
-if (session.info.isLoggedIn) {
-  log("Logged in as: " + session.info.webId);
-}
-
-</script>
-
+  Logging into Solid...
 </body>
 </html>
